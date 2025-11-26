@@ -39,6 +39,19 @@ V2/
 
 ## 🛠️ Quick Start
 
+### Ubuntu Server (Automated)
+```bash
+# Clone the repository
+git clone https://github.com/gayan-tharuka/SaaS_v2.git
+cd SaaS_v2
+
+# Run automated deployment script
+chmod +x deploy.sh
+./deploy.sh
+```
+
+See **DEPLOY_UBUNTU.md** for detailed Ubuntu deployment guide.
+
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for local development)
