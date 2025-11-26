@@ -1,6 +1,7 @@
 import { IsString, IsNumber, IsArray, IsOptional, IsEnum, ValidateNested, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { OrderStatus } from '@prisma/client';
 
 export class OrderItemDto {
     @ApiProperty()
@@ -51,10 +52,10 @@ export class CreateOrderDto {
 }
 
 export class UpdateOrderDto {
-    @ApiProperty({ required: false })
+    @ApiProperty({ required: false, enum: OrderStatus })
     @IsOptional()
-    @IsEnum(['PENDING', 'CONFIRMED', 'READY', 'DISPATCHED', 'DELIVERED', 'CANCELLED'])
-    status?: string;
+    @IsEnum(OrderStatus)
+    status?: OrderStatus;
 }
 
 export class OrderFilterDto {
