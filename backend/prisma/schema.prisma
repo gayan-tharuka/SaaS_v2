@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CASHIER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  READY
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  users       User[]
+  products    Product[]
+  orders      Order[]
+  customers   Customer[]
+  deliveryTemplates DeliveryTemplate[]
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   
+  name      String
+  role      Role     @default(CASHIER)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String
+  category    String
+  price       Decimal
+  cost        Decimal
+  unit        String   
+  stock       Int      @default(0)
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  orderItems  OrderItem[]
+  history     InventoryHistory[]
+  createdAt   DateTime @default(now())
+  
+  @@unique([tenantId, sku])
+}
+
+model InventoryHistory {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  change      Int
+  reason      String   
+  createdAt   DateTime @default(now())
+}
+
+model DeliveryTemplate {
+  id          String   @id @default(uuid())
+  name        String   // e.g., "Domex Standard"
+  firstKgPrice Decimal
+  extraKgPrice Decimal
+  isDefault   Boolean  @default(false)
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  orders      Order[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String
+  address   String
+  city      String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  orders    Order[]
+  
+  @@unique([tenantId, phone])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     Int         @default(autoincrement()) 
+  customerId      String
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal
+  discount        Decimal     @default(0)
+  deliveryFee     Decimal
+  deliveryTemplateId String?
+  deliveryTemplate DeliveryTemplate? @relation(fields: [deliveryTemplateId], references: [id])
+  paymentMethod   String      
+  orderSource     String      // WhatsApp, FB, Web
+  items           OrderItem[]
+  tenantId        String
+  tenant          Tenant      @relation(fields: [tenantId], references: [id])
+  createdAt       DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Decimal 
+}

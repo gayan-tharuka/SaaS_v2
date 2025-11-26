@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: oms_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: oms_user
+      POSTGRES_PASSWORD: oms_password
+      POSTGRES_DB: oms_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - oms_network
+
+  # NestJS Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: oms_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://oms_user:oms_password@postgres:5432/oms_db
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-change-in-production
+      PORT: 4000
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - oms_network
+    command: npm run start:dev
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: oms_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - oms_network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  oms_network:
+    driver: bridge
